@@ -167,14 +167,28 @@ class OutputGuardrailPlugin(base_plugin.BasePlugin):
         if not response_text:
             return llm_response
 
-        # TODO: Implement logic:
-        # 1. Call content_filter(response_text)
-        #    - If issues found: replace llm_response.content with redacted version
-        #    - Increment self.redacted_count
-        # 2. If use_llm_judge: call llm_safety_check(response_text)
-        #    - If unsafe: replace llm_response.content with a safe message
-        #    - Increment self.blocked_count
-        # 3. Return llm_response (possibly modified)
+        ## 1. Content Filter (PII & Secrets)
+        filter_result = content_filter(response_text)
+        if not filter_result["safe"]:
+            self.redacted_count += 1
+            # Update the response with redacted text
+            llm_response.content = types.Content(
+                role="model",
+                parts=[types.Part.from_text(text=filter_result["redacted"])]
+            )
+            response_text = filter_result["redacted"]
+
+        # 2. LLM-as-Judge Safety Check
+        if self.use_llm_judge:
+            judge_result = await llm_safety_check(response_text)
+            if not judge_result["safe"]:
+                self.blocked_count += 1
+                # Block entirely and provide a safe message
+                llm_response.content = types.Content(
+                    role="model",
+                    parts=[types.Part.from_text(text="I apologize, but my response was flagged for containing sensitive or unsafe information. How else can I help you with banking?")]
+                )
+
 
         return llm_response  # TODO: modify if needed
 
