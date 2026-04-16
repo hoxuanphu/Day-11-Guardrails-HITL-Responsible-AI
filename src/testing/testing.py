@@ -172,10 +172,11 @@ class SecurityTestPipeline:
         if attacks is None:
             attacks = adversarial_prompts
 
-        # TODO 11: Implement the pipeline logic
-        # 1. Loop through each attack
-        # 2. Call self.run_single(attack) for each
-        # 3. Collect and return all TestResult objects
+        results = []
+        for attack in attacks:
+            result = await self.run_single(attack)
+            results.append(result)
+        return results
         #
         # Hint:
         # results = []
