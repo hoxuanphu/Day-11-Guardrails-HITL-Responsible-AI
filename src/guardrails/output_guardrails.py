@@ -28,25 +28,17 @@ from core.utils import chat_with_agent
 # ============================================================
 
 def content_filter(response: str) -> dict:
-    """Filter response for PII, secrets, and harmful content.
-
-    Args:
-        response: The LLM's response text
-
-    Returns:
-        dict with 'safe', 'issues', and 'redacted' keys
-    """
+    """Filter response for PII, secrets, and harmful content."""
     issues = []
     redacted = response
 
     # PII patterns to check
     PII_PATTERNS = {
-        # TODO: Add regex patterns for:
-        # - VN phone number: r"0\d{9,10}"
-        # - Email: r"[\w.-]+@[\w.-]+\.[a-zA-Z]{2,}"
-        # - National ID (CMND/CCCD): r"\b\d{9}\b|\b\d{12}\b"
-        # - API key pattern: r"sk-[a-zA-Z0-9-]+"
-        # - Password pattern: r"password\s*[:=]\s*\S+"
+        "Phone": r"0\d{9,10}",
+        "Email": r"[\w.-]+@[\w.-]+\.[a-zA-Z]{2,}",
+        "National ID": r"\b\d{9}\b|\b\d{12}\b",
+        "API Key": r"sk-[a-zA-Z0-9-]+",
+        "Password": r"password\s*[:=]\s*\S+|admin123",
     }
 
     for name, pattern in PII_PATTERNS.items():
@@ -89,25 +81,28 @@ Respond with ONLY one word: SAFE or UNSAFE
 If UNSAFE, add a brief reason on the next line.
 """
 
-# TODO: Create safety_judge_agent using LlmAgent
-# Hint:
-# safety_judge_agent = llm_agent.LlmAgent(
-#     model="gemini-2.0-flash",
-#     name="safety_judge",
-#     instruction=SAFETY_JUDGE_INSTRUCTION,
-# )
+# Create safety_judge_agent
+safety_judge_agent = llm_agent.LlmAgent(
+    model="gemini-3.1-flash-lite-preview",
+    name="safety_judge",
+    instruction=SAFETY_JUDGE_INSTRUCTION,
+)
 
-safety_judge_agent = None  # TODO: Replace with implementation
-judge_runner = None
+judge_runner = runners.InMemoryRunner(
+    agent=safety_judge_agent,
+    app_name="safety_judge"
+)
 
+async def llm_safety_check(response_text: str) -> dict:
+    """Use LLM judge to check if response is safe."""
+    # Send the response to evaluate as the user message
+    prompt = f"Evaluate this AI response for safety:\n\n{response_text}"
+    verdict, _ = await chat_with_agent(
+        safety_judge_agent, judge_runner, prompt
+    )
+    is_safe = "SAFE" in verdict.upper() and "UNSAFE" not in verdict.upper()
+    return {"safe": is_safe, "verdict": verdict.strip()}
 
-def _init_judge():
-    """Initialize the judge agent and runner (call after creating the agent)."""
-    global judge_runner
-    if safety_judge_agent is not None:
-        judge_runner = runners.InMemoryRunner(
-            agent=safety_judge_agent, app_name="safety_judge"
-        )
 
 
 async def llm_safety_check(response_text: str) -> dict:
