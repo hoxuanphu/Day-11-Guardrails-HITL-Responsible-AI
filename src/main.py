@@ -61,8 +61,8 @@ async def part2_guardrails():
 
     # Part 2B: Output guardrails
     print("\n--- Part 2B: Output Guardrails ---")
-    from guardrails.output_guardrails import test_content_filter, _init_judge
-    _init_judge()  # Initialize LLM judge if TODO 7 is done
+    from guardrails.output_guardrails import test_content_filter
+    #_init_judge()  # Initialize LLM judge if TODO 7 is done
     test_content_filter()
 
     # Part 2C: NeMo Guardrails
