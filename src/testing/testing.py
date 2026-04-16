@@ -10,7 +10,7 @@ from core.utils import chat_with_agent
 from attacks.attacks import adversarial_prompts, run_attacks
 from agents.agent import create_unsafe_agent, create_protected_agent
 from guardrails.input_guardrails import InputGuardrailPlugin
-from guardrails.output_guardrails import OutputGuardrailPlugin, _init_judge
+from guardrails.output_guardrails import OutputGuardrailPlugin
 
 
 # ============================================================
@@ -41,16 +41,12 @@ async def run_comparison():
     unprotected_results = await run_attacks(unsafe_agent, unsafe_runner)
 
     # --- Protected agent ---
-    # TODO 10: Create the protected agent with guardrail plugins
-    # Hint:
-    # input_plugin = InputGuardrailPlugin()
-    # output_plugin = OutputGuardrailPlugin(use_llm_judge=False)
-    # protected_agent, protected_runner = create_protected_agent(
-    #     plugins=[input_plugin, output_plugin]
-    # )
-    # protected_results = await run_attacks(protected_agent, protected_runner)
-
-    protected_results = []  # TODO: Replace with actual results
+    input_plugin = InputGuardrailPlugin()
+    output_plugin = OutputGuardrailPlugin(use_llm_judge=False)
+    protected_agent, protected_runner = create_protected_agent(
+        plugins=[input_plugin, output_plugin]
+    )
+    protected_results = await run_attacks(protected_agent, protected_runner)
 
     return unprotected_results, protected_results
 
