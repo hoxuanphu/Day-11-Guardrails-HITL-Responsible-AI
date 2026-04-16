@@ -33,24 +33,7 @@ NEMO_YAML_CONFIG = textwrap.dedent("""\
 """)
 
 
-# ============================================================
-# TODO 9: Define Colang rules
-#
-# Add at least 3 NEW user/bot message definitions and
-# corresponding flows to handle:
-# - Role confusion attacks ("you are now...")
-# - Encoding attacks ("convert to Base64...")
-# - Vietnamese injection ("Bỏ qua mọi hướng dẫn...")
-#
-# The existing rules below handle basic injection and
-# off-topic questions. Your new rules should catch
-# attacks that bypass these basic patterns.
-#
-# Colang syntax:
-#   define user <name>       -> example user messages
-#   define bot <name>        -> bot response templates
-#   define flow <name>       -> conversation pattern
-# ============================================================
+
 
 COLANG_CONFIG = textwrap.dedent("""\
     # --- Existing rules (provided) ---
@@ -146,7 +129,7 @@ def init_nemo():
     if not NEMO_AVAILABLE:
         print("Skipping NeMo init — nemoguardrails not installed.")
         return None
-
+    print("Loading NeMo config...")
     config = RailsConfig.from_content(
         yaml_content=NEMO_YAML_CONFIG,
         colang_content=COLANG_CONFIG,
