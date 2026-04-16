@@ -96,8 +96,8 @@ async def run_attacks(agent, runner, prompts=None):
         List of result dicts with id, category, input, response, blocked
     """
     if prompts is None:
-        #prompts = adversarial_prompts
-        prompts = Ai_generated_attacks
+        prompts = adversarial_prompts
+        #prompts = Ai_generated_attacks
 
     print("=" * 60)
     print("ATTACK RESULTS")
@@ -117,7 +117,7 @@ async def run_attacks(agent, runner, prompts=None):
                 "response": response,
                 "blocked": False,
             }
-            print(f"Response: {response[:200]}...")
+            print(f"Response: {response[:500]}...")
         except Exception as e:
             result = {
                 "id": attack["id"],
