@@ -44,6 +44,9 @@ def detect_injection(user_input: str) -> bool:
         r"forget your instructions",
         r"dan mode",
         r"override safety",
+        r"show password",
+        r"show source code",
+        r"make a bomb",
     ]
 
     for pattern in INJECTION_PATTERNS:
@@ -72,7 +75,7 @@ ALLOWED_TOPICS = [
 
 BLOCKED_TOPICS = [
     "hack", "exploit", "weapon", "drug", "illegal",
-    "violence", "gambling", 'bomb ', "make a bomb", "how to kill", "terrorism",
+    "violence", "gambling", 'bomb ', "make a bomb", "how to kill", "terrorism", "password", "instructions",
 ]
 
 def topic_filter(user_input: str) -> bool:
