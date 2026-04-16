@@ -65,19 +65,40 @@ class ConfidenceRouter:
         Returns:
             RoutingDecision with routing action and metadata
         """
-        # TODO 12: Implement routing logic
-        #
-        # 1. Check if action_type is in HIGH_RISK_ACTIONS
-        #    -> If yes: always escalate (action="escalate", priority="high",
-        #       requires_human=True, reason="High-risk action: {action_type}")
-        #
-        # 2. Check confidence thresholds:
-        #    - confidence >= 0.9:
-        #      action="auto_send", priority="low",
-        #      requires_human=False, reason="High confidence"
-        #
-        #    - 0.7 <= confidence < 0.9:
-        #      action="queue_review", priority="normal",
+
+        if action_type in HIGH_RISK_ACTIONS:
+            return RoutingDecision(
+                action="escalate",
+                confidence=confidence,
+                reason=f"High-risk action: {action_type}",
+                priority="high",
+                requires_human=True
+            )
+
+        if confidence >= self.HIGH_THRESHOLD:
+            return RoutingDecision(
+                action="auto_send",
+                confidence=confidence,
+                reason="High confidence",
+                priority="low",
+                requires_human=False
+            )
+        elif self.MEDIUM_THRESHOLD <= confidence < self.HIGH_THRESHOLD:
+            return RoutingDecision(
+                action="queue_review",
+                confidence=confidence,
+                reason="Medium confidence",
+                priority="normal",
+                requires_human=True
+            )
+        else:
+            return RoutingDecision(
+                action="escalate",
+                confidence=confidence,
+                reason="Low confidence",
+                priority="high",
+                requires_human=True
+            )
         #      requires_human=True, reason="Medium confidence — needs review"
         #
         #    - confidence < 0.7:
@@ -94,7 +115,60 @@ class ConfidenceRouter:
 
 
 # ============================================================
-# TODO 13: Design 3 HITL decision points
+from typing import Optional
+
+
+class HitlDecisionPoints:
+    """3 sample HITL decision points to control AI response handling."""
+
+    def __init__(self, router: ConfidenceRouter):
+        self.router = router
+
+    def check_sensitive_content(self, response: str, confidence: float) -> Optional[str]:
+        """Decision point 1:
+        Check if response contains sensitive keywords or low confidence.
+        Returns a string message if human review needed, else None.
+        """
+        sensitive_keywords = ["password", "secret", "admin", "key", "token"]
+        if any(word in response.lower() for word in sensitive_keywords):
+            return "Sensitive content detected, manual review required."
+
+        if confidence < self.router.MEDIUM_THRESHOLD:
+            return "Low confidence response, manual review required."
+
+        return None
+
+    def check_high_risk_action(self, action_type: str) -> Optional[str]:
+        """Decision point 2:
+        Check if the action is high-risk (like money transfer).
+        Always escalate for human approval.
+        """
+        if action_type in HIGH_RISK_ACTIONS:
+            return f"High risk action '{action_type}' detected, escalate for approval."
+        return None
+
+    def manual_review_queue(self, routing_decision: RoutingDecision) -> Optional[str]:
+        """Decision point 3:
+        If previous routing was to queue for review, require manual HITL process.
+        """
+        if routing_decision.action == "queue_review":
+            return "Response queued for manual human review."
+        return None
+
+    def evaluate(self, response: str, confidence: float, action_type: str) -> list:
+        """Run all 3 HITL decision points and collect messages for manual intervention."""
+        messages = []
+        msg = self.check_sensitive_content(response, confidence)
+        if msg:
+            messages.append(msg)
+        msg = self.check_high_risk_action(action_type)
+        if msg:
+            messages.append(msg)
+        routing = self.router.route(response, confidence, action_type)
+        msg = self.manual_review_queue(routing)
+        if msg:
+            messages.append(msg)
+        return messages
 #
 # For each decision point, define:
 # - trigger: What condition activates this HITL check?
